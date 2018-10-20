@@ -2,11 +2,13 @@ package filebrowser
 
 import (
 	"errors"
+	"fmt"
 	"html/template"
 	"io"
 	"io/ioutil"
 	"log"
 	"net/http"
+	"net/url"
 	"os"
 	"path/filepath"
 	"sort"
@@ -93,13 +95,13 @@ func (p *previousDirectory) Name() string {
 }
 
 func New(fs FileSystem, template Template) (*Browser, error) {
-	rootAbs, err := fs.Abs("/")
+	rootAbs, err := fs.Abs("")
 
 	if err != nil {
 		return nil, err
 	}
 
-	return &Browser{fs: fs, template: template, rootAbs: rootAbs}, nil
+	return &Browser{fs: fs, template: template, rootAbs: filepath.Clean(rootAbs)}, nil
 }
 
 func (b *Browser) FileListing(path string, w io.Writer) error {
@@ -123,7 +125,9 @@ func (b *Browser) FileListing(path string, w io.Writer) error {
 		return err
 	}
 
-	if abs != b.rootAbs {
+	fmt.Println(abs)
+
+	if abs != "/" && abs != "." && abs != b.rootAbs {
 		previous, err := b.fs.Stat("..")
 
 		if err != nil {
@@ -141,9 +145,16 @@ func (b *Browser) FileListing(path string, w io.Writer) error {
 		return err
 	}
 
+	unescaped, err := url.PathUnescape(path)
+
+	if err != nil {
+		return err
+	}
+
 	return t.Execute(w, map[string]interface{}{
 		"Files": files,
 		"Path":  path,
+		"UnescapedPath":  filepath.Clean(filepath.Join(b.rootAbs, unescaped)),
 	})
 }
 
@@ -177,6 +188,9 @@ var StandaloneHTMLTemplate Template = `
 
 const FilesOnlyHTMLTemplate Template = `
 	{{ $path := .Path }}
+
+	<strong>{{ .UnescapedPath }}</strong><br><br>
+
 	<table>
 		{{ range $index, $file := .Files }}
 			<tr>
