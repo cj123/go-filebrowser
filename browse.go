@@ -2,7 +2,6 @@ package filebrowser
 
 import (
 	"errors"
-	"fmt"
 	"html/template"
 	"io"
 	"io/ioutil"
@@ -125,8 +124,6 @@ func (b *Browser) FileListing(path string, w io.Writer) error {
 		return err
 	}
 
-	fmt.Println(abs)
-
 	if abs != "/" && abs != "." && abs != b.rootAbs {
 		previous, err := b.fs.Stat("..")
 
@@ -152,9 +149,9 @@ func (b *Browser) FileListing(path string, w io.Writer) error {
 	}
 
 	return t.Execute(w, map[string]interface{}{
-		"Files": files,
-		"Path":  path,
-		"UnescapedPath":  filepath.Clean(filepath.Join(b.rootAbs, unescaped)),
+		"Files":         files,
+		"Path":          path,
+		"UnescapedPath": filepath.Clean(filepath.Join(b.rootAbs, unescaped)),
 	})
 }
 
