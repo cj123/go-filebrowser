@@ -107,10 +107,11 @@ func (b *Browser) FileListing(path string, w io.Writer) error {
 		path = "/"
 	}
 
+	path = filepath.Clean(path)
+
 	abs, err := b.fs.Abs(path)
 
 	if err != nil {
-		panic(err)
 		return err
 	} else if len(abs) < len(b.rootAbs) {
 		return ErrAccessDenied
@@ -188,7 +189,11 @@ const FilesOnlyHTMLTemplate Template = `
 
 			<td>
 			{{ if $file.IsDir }}
-				<a href="?path={{ $path }}/{{ $file.Name }}">
+				{{ if ne $path "/" }}
+					<a href="?path={{ $path }}%2f{{ $file.Name }}">
+				{{ else }}
+					<a href="?path={{ $file.Name }}">
+				{{ end }}
 			{{ end }}
 
 			{{ $file.Name }}
